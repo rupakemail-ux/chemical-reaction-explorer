@@ -1,0 +1,100 @@
+let comp1 = "";
+let comp2 = "";
+let productName = "";
+let balancedEq = "";
+
+let x1 = 150;
+let y1 = 200;
+let x2 = 450;
+let y2 = 200;
+let moving = false;
+let showProduct = false;
+
+async function runReaction() {
+  comp1 = document.getElementById("compound1").value;
+  comp2 = document.getElementById("compound2").value;
+
+  const response = await fetch("/react", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({compound1: comp1, compound2: comp2})
+  });
+
+  const data = await response.json();
+  productName = data.result;
+  balancedEq = data.balanced || "";
+
+  // Add to history
+  const historyList = document.getElementById("history");
+  const li = document.createElement("li");
+  li.textContent = `${comp1} + ${comp2} → ${productName} ${balancedEq ? "(" + balancedEq + ")" : ""}`;
+  historyList.appendChild(li);
+
+  // Reset positions and states
+  x1 = 150;
+  x2 = 450;
+  moving = true;
+  showProduct = false;
+}
+
+function setup() {
+  let canvas = createCanvas(600, 400);
+  canvas.parent(document.body);
+  textAlign(CENTER, CENTER);
+  textSize(16);
+}
+
+function drawAtom(x, y, label, col, size, t, electronCount=4) {
+  // nucleus
+  fill(col);
+  noStroke();
+  ellipse(x, y, size);
+
+  // orbiting electrons
+  for (let i = 0; i < electronCount; i++) {
+    let angle = t + i * TWO_PI/electronCount;
+    let ex = x + cos(angle) * (size/2 + 20);
+    let ey = y + sin(angle) * (size/2 + 20);
+    fill(200);
+    ellipse(ex, ey, 8);
+  }
+
+  // label
+  fill(0);
+  text(label, x, y + size/2 + 20);
+}
+
+function draw() {
+  background(255);
+  let t = millis() / 500;
+
+  if (showProduct) {
+    // ✅ Product atom with 8 electrons
+    drawAtom(width/2, height/2, productName, color(0,200,0), 100, t, 8);
+
+    if (balancedEq) {
+      fill(0);
+      text(balancedEq, width/2, height - 40);
+    }
+    return;
+  }
+
+  if (moving) {
+    if (x1 < 275) x1 += 2;
+    if (x2 > 325) x2 -= 2;
+
+    // Reactants with 4 electrons
+    drawAtom(x1, y1, comp1, color(200,0,0), 60, t, 4);
+    drawAtom(x2, y2, comp2, color(0,0,200), 60, t, 4);
+
+    if (x1 >= 275 && x2 <= 325) {
+      moving = false;
+      showProduct = true;
+    }
+  } else {
+    if (comp1 && comp2) {
+      drawAtom(x1, y1, comp1, color(200,0,0), 60, t, 4);
+      drawAtom(x2, y2, comp2, color(0,0,200), 60, t, 4);
+    }
+  }
+}

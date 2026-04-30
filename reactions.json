@@ -1,0 +1,78 @@
+{
+  "HCl+NaOH": {
+    "products": ["NaCl", "H2O"],
+    "type": "Neutralization"
+  },
+  "C+O2": {
+    "products": ["CO2"],
+    "type": "Combustion"
+  },
+  "Fe+O2": {
+    "products": ["Fe2O3"],
+    "type": "Oxidation"
+  },
+  "H2+O2": {
+    "products": ["H2O"],
+    "type": "Combustion"
+  },
+  "CaCO3": {
+    "products": ["CaO", "CO2"],
+    "type": "Decomposition"
+  },
+  "Zn+HCl": {
+    "products": ["ZnCl2", "H2"],
+    "type": "Single Displacement"
+  },
+  "Na+Cl2": {
+    "products": ["NaCl"],
+    "type": "Synthesis"
+  },
+  "CH4+O2": {
+    "products": ["CO2", "H2O"],
+    "type": "Combustion"
+  },
+  "AgNO3+NaCl": {
+    "products": ["AgCl", "NaNO3"],
+    "type": "Double Displacement"
+  },
+  "KClO3": {
+    "products": ["KCl", "O2"],
+    "type": "Decomposition"
+  },
+  "N2+H2": {
+    "products": ["NH3"],
+    "type": "Synthesis"
+  },
+  "Ca+H2O": {
+    "products": ["Ca(OH)2", "H2"],
+    "type": "Single Displacement"
+  },
+  "Na2CO3+HCl": {
+    "products": ["NaCl", "H2O", "CO2"],
+    "type": "Neutralization"
+  },
+  "SO2+O2": {
+    "products": ["SO3"],
+    "type": "Combustion"
+  },
+  "SO3+H2O": {
+    "products": ["H2SO4"],
+    "type": "Synthesis"
+  },
+  "CaO+H2O": {
+    "products": ["Ca(OH)2"],
+    "type": "Synthesis"
+  },
+  "Mg+O2": {
+    "products": ["MgO"],
+    "type": "Combustion"
+  },
+  "CuSO4+Zn": {
+    "products": ["ZnSO4", "Cu"],
+    "type": "Single Displacement"
+  },
+  "BaCl2+Na2SO4": {
+    "products": ["BaSO4", "NaCl"],
+    "type": "Double Displacement"
+  }
+}

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chemical Reaction Explorer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chemical Reaction Explorer</h1>
+  <form id="reactionForm" onsubmit="event.preventDefault(); runReaction();">
+    <label>Compound 1:</label>
+    <input type="text" id="compound1" placeholder="e.g. HCl">
+    <label>Compound 2:</label>
+    <input type="text" id="compound2" placeholder="e.g. NaOH">
+    <button type="submit">Simulate Reaction</button>
+  </form>
+
+  <div id="result"></div>
+
+  <h2>Reaction History</h2>
+  <ul id="history"></ul>
+
+  <!-- Load p5.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <script>
+    async function runReaction() {
+      const comp1 = document.getElementById("compound1").value;
+      const comp2 = document.getElementById("compound2").value;
+
+      const response = await fetch("/react", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({compound1: comp1, compound2: comp2})
+      });
+
+      const data = await response.json();
+      document.getElementById("result").innerText = data.result;
+
+      // Add to history
+      const historyList = document.getElementById("history");
+      const li = document.createElement("li");
+      li.textContent = `${comp1} + ${comp2} → ${data.result}`;
+      historyList.appendChild(li);
+    }
+
+    // p5.js sketch
+    function setup() {
+      createCanvas(600, 400);
+    }
+
+    function draw() {
+      background(255);
+      fill(200, 0, 0);
+      ellipse(200, 200, 50, 50); // Atom 1
+      fill(0, 0, 200);
+      ellipse(400, 200, 50, 50); // Atom 2
+      stroke(0);
+      line(200, 200, 400, 200);  // Bond forming
+    }
+  </script>
+</body>
+</html>

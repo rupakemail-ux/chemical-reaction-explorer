@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chemical Reaction Explorer</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+      color: #333;
+    }
+    header {
+      background: #0066cc;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    header h1 { margin: 0; font-size: 30px; letter-spacing: 1px; }
+    main {
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 20px;
+      transition: transform 0.2s;
+    }
+    .card:hover { transform: translateY(-4px); }
+    form { display: flex; flex-direction: column; gap: 12px; }
+    form label { font-weight: 600; }
+    form input {
+      padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
+    }
+    form button {
+      background: #0066cc; color: white; border: none;
+      padding: 12px; border-radius: 6px; cursor: pointer;
+      font-size: 15px; font-weight: 600; transition: background 0.3s;
+    }
+    form button:hover { background: #004c99; }
+    h2 {
+      margin-top: 0; font-size: 22px;
+      border-bottom: 2px solid #eee; padding-bottom: 6px;
+    }
+    #canvasContainer {
+      border: 1px solid #ccc; border-radius: 8px;
+      margin-top: 10px; width: 100%; height: 420px; background: #fafafa;
+    }
+    ul { list-style: none; padding-left: 0; }
+    ul li {
+      background: #f9f9f9; margin: 6px 0; padding: 10px;
+      border-radius: 6px; border: 1px solid #eee; font-size: 14px;
+      font-family: monospace;
+    }
+    @media (max-width: 768px) { main { grid-template-columns: 1fr; } }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+<body>
+  <header><h1>Chemical Reaction Explorer</h1></header>
+  <main>
+    <div class="card">
+      <h2>Reaction Input</h2>
+      <form id="reactionForm" onsubmit="event.preventDefault(); runReaction();">
+        <label>Compound 1:</label>
+        <input type="text" id="compound1" placeholder="e.g. HCl">
+        <label>Compound 2:</label>
+        <input type="text" id="compound2" placeholder="e.g. NaOH">
+        <button type="submit">Simulate Reaction</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Reaction History</h2>
+      <ul id="history"></ul>
+    </div>
+    <div class="card" style="grid-column: span 2;">
+      <h2>Simulation Canvas</h2>
+      <div id="canvasContainer"></div>
+    </div>
+  </main>
+
+  <script>
+    let atoms1 = [], atoms2 = [];
+    let productName = "", balancedEq = "";
+    let moving = false, fusing = false, showProduct = false;
+    let fusionProgress = 0;
+    let canvas;
+
+    const electronMap = { "H": 1, "O": 8, "Cl": 7, "Na": 1, "C": 6, "N": 5, "K": 1, "Mg": 2 };
+
+    function getElectronCount(compound) {
+      let match = compound.match(/[A-Z][a-z]?/);
+      let element = match ? match[0] : "C";
+      return electronMap[element] || 4;
+    }
+
+    async function runReaction() {
+      atoms1 = []; atoms2 = [];
+      moving = false; fusing = false; showProduct = false; fusionProgress = 0;
+
+      let c1Raw = document.getElementById("compound1").value.trim();
+      let c2Raw = document.getElementById("compound2").value.trim();
+      if (!c1Raw || !c2Raw) return;
+
+      // ✅ Call Flask backend
+      const response = await fetch("/react", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({compound1: c1Raw, compound2: c2Raw})
+      });
+      const data = await response.json();
+      productName = data.result;
+      balancedEq = data.balanced || "";
+
+      atoms1.push({ x: 100, y: 200, label: c1Raw, color: [255, 99, 71], eCount: getElectronCount(c1Raw) });
+      atoms2.push({ x: 500, y: 200, label: c2Raw, color: [100, 149, 237], eCount: getElectronCount(c2Raw) });
+
+      moving = true;
+
+      const li = document.createElement("li");
+      li.textContent = balancedEq ? balancedEq : `${c1Raw} + ${c2Raw} → ${productName}`;
+      document.getElementById("history").prepend(li);
+    }
+
+    function setup() {
+      canvas = createCanvas(600, 400);
+      canvas.parent("canvasContainer");
+      textAlign(CENTER, CENTER);
+    }
+
+    function drawAtom(x, y, label, col, eCount, size, t) {
+      push();
+      translate(x, y);
+      fill(col); noStroke(); ellipse(0, 0, size);
+      fill(100);
+      for (let i = 0; i < eCount; i++) {
+        let angle = t + i * (TWO_PI / eCount);
+        let ex = cos(angle) * (size/2 + 15);
+        let ey = sin(angle) * (size/2 + 15);
+        ellipse(ex, ey, 6);
+      }
+      fill(255); textSize(14); textStyle(BOLD); text(label, 0, 0);
+      pop();
+    }
+
+    function draw() {
+      background(250);
+      let t = millis() / 1000;
+
+      if (showProduct) {
+        drawAtom(width/2, height/2, productName, [60, 179, 113], 8, 80, t);
+        fill(50);
+        textSize(18);
+        text("Reaction Successful!", width/2, height - 60);
+      } 
+      else if (moving) {
+        let a1 = atoms1[0];
+        let a2 = atoms2[0];
+
+        if (a1.x < 260) a1.x += 2;
+        if (a2.x > 340) a2.x -= 2;
+
+        drawAtom(a1.x, a1.y, a1.label, a1.color, a1.eCount, 50, t);
+        drawAtom(a2.x, a2.y, a2.label, a2.color, a2.eCount, 50, t);
+
+        if (a1.x >= 260 && a2.x <= 340) {
+          moving = false;
+          fusing = true;
+        }
+      } 
+      else if (fusing) {
+        fusionProgress += 0.02;
+        
+        // Expansion effect during fusion
+        noFill();
+        stroke(255, 165, 0, 255 * (1 - fusionProgress));
+        strokeWeight(4);
+        ellipse(width/2, height/2, fusionProgress * 150);
+        
+        // Show atoms overlapping slightly
+        drawAtom(270, 200, atoms1[0].label, atoms1[0].color, atoms1[0].eCount, 50, t);
+        drawAtom(330, 200, atoms2[0].label, atoms2[0].color, atoms2[0].eCount, 50, t);
+
+        if (fusionProgress >= 1) {
+          fusing = false;
+          showProduct = true;
+        }
+      } 
+      else {
+        fill(180);
+        textSize(16);
+        text("Enter compounds and click Simulate", width/2, height/2);
+      }
+    }
+  </script>
+</body>
+</html>
